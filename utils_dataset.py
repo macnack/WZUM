@@ -15,7 +15,7 @@ def read_lines(dataset):
     content = None
     with open(dataset, 'r') as f:
         content = f.read().splitlines()
-        if content[0][0] == ',':
+        if content[0][0] == ',' or content[0][1] == ',':
             content = content[1:]
     return content
 
