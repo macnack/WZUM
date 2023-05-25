@@ -224,7 +224,8 @@ def app_second():
     # clf = make_pipeline(StandardScaler(), LinearSVC(
     #     multi_class='crammer_singer', tol=1e-5))
     start = time.time()
-    svc =SVC(C=10,gamma='auto', verbose = False,break_ties=True,kernel = 'linear', tol=1e-1,probability=True, cache_size=2000, class_weight='balanced', decision_function_shape='ovr')
+    svc = SVC(C=10, gamma='auto', verbose=False, break_ties=True, kernel='linear', tol=1e-5,
+              probability=True, cache_size=2000, class_weight='balanced', decision_function_shape='ovr')
     clf = make_pipeline(StandardScaler(), svc)
     print(cross_val_score(clf, X, y, cv=5))
     clf.fit(X_train, y_train)
@@ -233,7 +234,7 @@ def app_second():
     calibrated_svc.fit(X_train, y_train)
     predictions_cal = calibrated_svc.predict(X_test)
     probabilities = calibrated_svc.predict_proba(X_test)
-    
+
     end = time.time()
 
     # print(clf.named_steps['linearsvc'].coef_.shape)
@@ -249,8 +250,25 @@ def app_second():
     # show_coefficients(clf)
     show_confusion_matrix(y_test, predictions, clf)
 
+
+def app3():
+    X_local, X_world, y = read_data('output.csv')
+    X = convert_poses_to_angles(X_local)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, stratify=y, test_size=0.20, random_state=42)
+
+    clf = make_pipeline(StandardScaler(), RandomForestClassifier())
+    clf.fit(X_train, y_train)
+    # Evaluate the model
+    predictions = clf.predict(X_test)
+    accuracy = accuracy_score(y_test, predictions)
+    print("Accuracy:", accuracy)
+    show_confusion_matrix(y_test, predictions, clf)
+
+
 def main():
     app_second()
+    # app3()
 
 
 if __name__ == '__main__':
