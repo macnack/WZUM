@@ -6,12 +6,14 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.ensemble import VotingClassifier
 from sklearn.svm import SVC, LinearSVC, LinearSVR
 from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import BaggingClassifier
 from sklearn.calibration import CalibratedClassifierCV
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis, LinearDiscriminantAnalysis
 from sklearn.model_selection import cross_val_score
 import time
 # print(df[local_landmark])
@@ -253,11 +255,16 @@ def app_second():
 
 def app3():
     X_local, X_world, y = read_data('output.csv')
-    X = convert_poses_to_angles(X_local)
+    X_local = convert_poses_to_angles(X_local)
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, stratify=y, test_size=0.20, random_state=42)
+        X_local, y, stratify=y, test_size=0.20, random_state=42)
+    svc = SVC(C=1000, gamma='auto', verbose=False, break_ties=True, kernel='linear', tol=1e-5,
+            probability=True, cache_size=2000, class_weight='balanced', decision_function_shape='ovr')
+    qda = QuadraticDiscriminantAnalysis()# make_pipeline(StandardScaler(), QuadraticDiscriminantAnalysis())
+    voting_classifier = VotingClassifier(
+    estimators=[('qda', qda), ('svc', svc), ('rdforrest', RandomForestClassifier(class_weight='balanced'))],voting='soft')  # Use soft voting for probability-based aggregation
 
-    clf = make_pipeline(StandardScaler(), RandomForestClassifier())
+    clf = make_pipeline(StandardScaler(), voting_classifier)
     clf.fit(X_train, y_train)
     # Evaluate the model
     predictions = clf.predict(X_test)
@@ -267,8 +274,8 @@ def app3():
 
 
 def main():
-    app_second()
-    # app3()
+    #app_second()
+    app3()
 
 
 if __name__ == '__main__':
