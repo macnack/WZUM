@@ -1,204 +1,17 @@
-import pandas as pd
-from utils import local_landmark, world_landmark, hand_landmarks
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from utils import read_data, show_coefficients, show_confusion_matrix, convert_poses_to_angles
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.metrics import f1_score, accuracy_score
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
-import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.ensemble import VotingClassifier
-from sklearn.svm import SVC, LinearSVC, LinearSVR
-from sklearn.linear_model import SGDClassifier
-from sklearn.metrics import accuracy_score
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.ensemble import BaggingClassifier
+from sklearn.svm import SVC, LinearSVC
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis, LinearDiscriminantAnalysis
-from sklearn.model_selection import cross_val_score
+import argparse
 import time
-# print(df[local_landmark])
-# print(df[world_landmark])
+import pickle
 
-
-def read_data(file):
-    df = pd.read_csv(file, index_col=0)
-
-    X_local = df[local_landmark].to_numpy()
-    X_world = df[world_landmark].to_numpy()
-    Y = df['letter'].to_numpy()
-    Y = [ord(letter.lower())-96 for letter in Y]
-
-    return X_local, X_world, Y
-
-
-def count(l):
-    return dict((x, l.count(x)) for x in set(l))
-
-
-def visualize_hand_landmarks(hand_landmarks):
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    # Loop through each hand in the collection
-    x = hand_landmarks[0]  # Extract x-coordinates
-    y = hand_landmarks[1]  # Extract y-coordinates
-    z = -hand_landmarks[2]  # Reverse and extract z-coordinates
-
-    ax.scatter(x, y, z)
-
-    # Set plot limits and labels
-    ax.set_xlim([0, 1])
-    ax.set_ylim([0, 1])
-    ax.set_zlim([-1, 0])
-
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-
-    # Show the plot
-    plt.show()
-
-
-def plot(X):
-    plt.scatter(X[:, 0], X[:, 1])
-    plt.axvline(x=0)
-    plt.axhline(y=0)
-    plt.title('Iris sepal features')
-    plt.xlabel('sepal length (cm)')
-    plt.ylabel('sepal width (cm)')
-    plt.show()
-
-
-def show_coefficients(clf):
-    coefficients = clf.named_steps['linearsvc'].coef_
-    classes = clf.named_steps['linearsvc'].classes_
-    # Create a bar chart for each class
-    for i, class_label in enumerate(classes):
-        plt.bar(range(len(coefficients[i])),
-                coefficients[i], label=class_label)
-
-    # Set the x-axis ticks as feature indices
-    plt.xticks(range(len(coefficients[0])), range(len(coefficients[0])))
-
-    # Set labels and legend
-    plt.xlabel('Feature Index')
-    plt.ylabel('Coefficient Value')
-    plt.legend(labels=[chr(a + 96) for a in clf.classes_])
-    print(len(clf.classes_))
-    # Show the plot
-    plt.show()
-
-
-def visualize_data(data):
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    landmark = np.reshape(data, (-1, 3))
-    for i in range(len(hand_landmarks)):
-        x, y, z = landmark[i]
-        ax.scatter(x, y, z)
-
-    # Set plot limits and labels
-    ax.set_xlim([0, 1])
-    ax.set_ylim([0, 1])
-    ax.set_zlim([-1, 0])
-
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-
-    # Show the plot
-    plt.show()
-
-
-def show_confusion_matrix(y_test, predictions, clf):
-    # change int to char
-    labels = [chr(a + 96) for a in clf.classes_]
-    cm = confusion_matrix(y_test, predictions, labels=clf.classes_)
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm,
-                                  display_labels=labels)
-    disp.plot()
-    plt.show()
-
-
-def angle_between_vectors(u, v):
-    if u.shape != v.shape:
-        print("not the same shape")
-        return 0
-    dot_product = np.dot(u, v)
-    norm = np.linalg.norm(u) * np.linalg.norm(v)
-    if norm == 0:
-        print("norm is 0")
-        return 0
-    if np.isclose(dot_product / norm, 1.0):
-        return 0.0
-    elif np.isclose(dot_product / norm, -1.0):
-        return np.pi
-    return np.arccos(dot_product / norm)
-
-
-def calculate_angle(landmarks_row, epsilon=1e-8):
-    """Calculate angle between landmarks.
-    Args:
-        landmarks_row: (21)landmarks with (3)poses in row (1, 63)
-        epsilon: to avoid divide by 0
-    Returns:
-        angles: angles (441) 
-    """
-    landmarks = np.reshape(landmarks_row, (-1, 3))
-
-    u = landmarks[:, np.newaxis, :]
-    v = landmarks[np.newaxis, :, :]
-
-    # calculate norm of vector
-    norms_u = np.linalg.norm(u, axis=-1)
-    norms_v = np.linalg.norm(v, axis=-1)
-
-    # calculate angles
-    angles = np.einsum('ijk,ijk->ij', u, v) / (norms_u * norms_v + epsilon)
-    angles = np.nan_to_num(np.arccos(angles))
-
-    angles = angles.flatten()
-    return angles
-
-
-def convert_to_angles(data):
-    """Convert poses of landmarks to angles.
-    Args:
-        data: landmarks poses 
-    Returns:
-        converted: angles (441) 
-    """
-    num_landmarks = len(data[0]) // 3
-    angles_per_sample = num_landmarks * num_landmarks
-    # Initialize an empty array for X
-    converted = np.empty((0, angles_per_sample))
-    for row in data:
-        converted = np.vstack((converted, calculate_angle(row)))
-    return converted
-
-
-def convert_poses_to_angles(X_poses):
-    epsilon = 1e-8
-    num_landmarks = len(X_poses[0]) // 3
-    angles_per_sample = num_landmarks * num_landmarks
-    # Initialize an empty array for X
-    X_angle = np.empty((0, angles_per_sample))
-    for row in X_poses:
-        landmarks = np.reshape(row, (-1, 3))
-
-        u = landmarks[:, np.newaxis, :]
-        v = landmarks[np.newaxis, :, :]
-
-        norms_u = np.linalg.norm(u, axis=-1)
-        norms_v = np.linalg.norm(v, axis=-1)
-
-        angles = np.einsum('ijk,ijk->ij', u, v) / (norms_u * norms_v + epsilon)
-        angles = np.nan_to_num(np.arccos(angles))
-
-        angles = angles.flatten()
-
-        X_angle = np.vstack((X_angle, angles))
-    return X_angle
+train_model = False
 
 
 def app_one():
@@ -255,14 +68,15 @@ def app_second():
 
 def app3():
     X_local, X_world, y = read_data('output.csv')
-    X_local = convert_poses_to_angles(X_local)
+    # X_local = convert_poses_to_angles(X_local)
     X_train, X_test, y_train, y_test = train_test_split(
         X_local, y, stratify=y, test_size=0.20, random_state=42)
     svc = SVC(C=1000, gamma='auto', verbose=False, break_ties=True, kernel='linear', tol=1e-5,
-            probability=True, cache_size=2000, class_weight='balanced', decision_function_shape='ovr')
-    qda = QuadraticDiscriminantAnalysis()# make_pipeline(StandardScaler(), QuadraticDiscriminantAnalysis())
+              probability=True, cache_size=2000, class_weight='balanced', decision_function_shape='ovr')
+    # make_pipeline(StandardScaler(), QuadraticDiscriminantAnalysis())
+    qda = QuadraticDiscriminantAnalysis()
     voting_classifier = VotingClassifier(
-    estimators=[('qda', qda), ('svc', svc), ('rdforrest', RandomForestClassifier(class_weight='balanced'))],voting='soft')  # Use soft voting for probability-based aggregation
+        estimators=[('qda', qda), ('svc', svc)], voting='soft')  # Use soft voting for probability-based aggregation
 
     clf = make_pipeline(StandardScaler(), voting_classifier)
     clf.fit(X_train, y_train)
@@ -273,10 +87,47 @@ def app3():
     show_confusion_matrix(y_test, predictions, clf)
 
 
-def main():
-    #app_second()
-    app3()
+def train_model():
+    X_local, _, y = read_data('data.csv')
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_local, y, stratify=y, test_size=0.2, random_state=42)
+    svc = SVC(C=1000, gamma='auto', verbose=False, break_ties=True, kernel='linear', tol=1e-5,
+              probability=True, cache_size=2000, class_weight='balanced', decision_function_shape='ovr')
+    qda = QuadraticDiscriminantAnalysis()
+    voting_classifier = VotingClassifier(
+        estimators=[('qda', qda), ('svc', svc)], voting='soft')
+    clf = make_pipeline(StandardScaler(), voting_classifier)
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_test)
+    accuracy = f1_score(y_test, y_pred)
+    print(accuracy)
+    pickle.dump(clf, open('model.p', 'wb'))
+
+
+def check_acc_model(dataset, output):
+    X_test, _, y_test = read_data(dataset)
+
+    clf = pickle.load(open('model.p', 'rb'))
+    y_pred = clf.predict(X_test)
+    accuracy = f1_score(y_test, y_pred)
+
+    with open(output, 'w') as output:
+        output.write(f"{accuracy}\n")
+
+
+def main(dataset, output):
+    if train_model:
+        train_model()
+
+    check_acc_model(dataset, output)
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(
+        description="Process files in a directory and write to an output file")
+    parser.add_argument("directory", nargs="?", default='dataset_latest',
+                        help="path to the directory of files")
+    parser.add_argument("output_file", nargs="?",
+                        default='data_latest.csv', help="path to the output file")
+    args = parser.parse_args()
+    main(args.directory, args.output_file)

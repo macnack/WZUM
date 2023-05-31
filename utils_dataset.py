@@ -44,7 +44,7 @@ if __name__ == '__main__':
         description="Process files in a directory and write to an output file")
     parser.add_argument("directory", nargs="?", default='dataset',
                         help="path to the directory of files")
-    parser.add_argument("output_file", nargs="?",
-                        default='output.csv', help="path to the output file")
+    parser.add_argument("output", nargs="?",
+                        default='data_latest.csv', help="path to the output file")
     args = parser.parse_args()
     main(args.directory, args.output_file)
