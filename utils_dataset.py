@@ -47,4 +47,4 @@ if __name__ == '__main__':
     parser.add_argument("output", nargs="?",
                         default='data_latest.csv', help="path to the output file")
     args = parser.parse_args()
-    main(args.directory, args.output_file)
+    main(args.directory, args.output)
