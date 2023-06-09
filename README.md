@@ -1,8 +1,6 @@
 # sign-alphabet-recognition
 Projek zaliczeniowy przedmiot Wybrane zagadnienia uczenia maszynowego. 
 
-Autor Maciej Krupka
-
 # Opis rozwiązania
 
 Ten projekt zawiera kod służący do trenowania i oceny modelu uczenia maszynowego w zadaniu klasyfikacji fragmentu alfabetu jezyka migowego. Poniżej znajduje się krótki opis rozwiązania:
