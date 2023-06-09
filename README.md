@@ -1,4 +1,48 @@
 # sign-alphabet-recognition
+
+# Solution description
+
+This project contains code to train and evaluate a machine learning model in the task of classifying a sign language alphabet fragment. The following is a brief description of the solution:
+
+## Data preparation
+
+1 Loading data: The `read_data` function reads data from a CSV file, where `X_local` represents features associated with local feature points, `X_world` represents features associated with global feature points, and `Y` represents the target variable (letters). The letters in `Y` are converted to numeric labels using the `ord` function, and then 96 is subtracted to assign them to a range of 1-26. The `X_world` data is not subsequently plotted.
+
+## Training the model
+
+1 Dividing the data: The data is split into training and test sets using the `train_test_split` function, where 20% of the data is for testing, and the split is balanced against the target variable.
+
+2 Classifiers:
+   - Support Vector Classifier (SVC): Uses a linear kernel and balanced class weights.
+   - Quadratic Discriminant Analysis (QDA): A classifier based on quadratic discriminant analysis.
+   - Random Forest Classifier (RFC): A classifier based on a random decision forest.
+   - Multi-layer Perceptron Classifier. (MLP): A classifier based on a neural network.
+
+3. ensemble classifier: Uses Voting Classifier, which combines three classifiers (SVC, QDA, RFC, MLP) using a 'soft' (soft) voting strategy.
+
+4 Processing pipeline (pipeline): Scales features using `StandardScaler` and applies an ensemble classifier.
+
+5. Training the model: The model is trained on the training data and then predicts labels for the test data. The trained model is saved using `pickle.dump`, and the F1 measure is calculated between the predicted labels and the true labels and printed on the screen.
+
+## Model evaluation
+
+1 Model evaluation: Load the test data, load the trained model, predict the labels for the test data, calculate the F1 measure between the predicted labels and the true labels and print on the screen.
+
+2 - Save the results: The predicted labels are written to the result file.
+
+## Command line interface
+
+You can run the program using the command line by specifying the path to the test data file and the path to the result file.
+
+Example usage:
+```
+python3 main.py test.csv out.csv
+```
+
+
+Translated with www.DeepL.com/Translator (free version)
+
+# sign-alphabet-recognition
 Projek zaliczeniowy przedmiot Wybrane zagadnienia uczenia maszynowego. 
 
 # Opis rozwiązania
