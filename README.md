@@ -1,8 +1,6 @@
 # sign-alphabet-recognition
 Projek zaliczeniowy przedmiot Wybrane zagadnienia uczenia maszynowego. 
 
-Autor Maciej Krupka
-
 # Opis rozwiązania
 
 Ten projekt zawiera kod służący do trenowania i oceny modelu uczenia maszynowego w zadaniu klasyfikacji fragmentu alfabetu jezyka migowego. Poniżej znajduje się krótki opis rozwiązania:
@@ -19,8 +17,9 @@ Ten projekt zawiera kod służący do trenowania i oceny modelu uczenia maszynow
    - Support Vector Classifier (SVC): Wykorzystuje liniowe jądro i zrównoważone wagi klas.
    - Quadratic Discriminant Analysis (QDA): Klasyfikator oparty na analizie dyskryminantów kwadratowych.
    - Random Forest Classifier (RFC): Klasyfikator oparty na losowym lesie decyzyjnym.
+   - Multi-layer Perceptron classifier. (MLP): Klasyfikator oparty na sieci neuronowej.
 
-3. Klasyfikator zespołowy: Wykorzystuje Voting Classifier, który łączy trzy klasyfikatory (SVC, QDA, RFC) przy użyciu strategii 'miękkiego' (ang.soft) głosowania.
+3. Klasyfikator zespołowy: Wykorzystuje Voting Classifier, który łączy trzy klasyfikatory (SVC, QDA, RFC, MLP) przy użyciu strategii 'miękkiego' (ang.soft) głosowania.
 
 4. Potok przetwarzania (pipeline): Skaluje cechy za pomocą `StandardScaler` i stosuje klasyfikator zespołowy.
 
